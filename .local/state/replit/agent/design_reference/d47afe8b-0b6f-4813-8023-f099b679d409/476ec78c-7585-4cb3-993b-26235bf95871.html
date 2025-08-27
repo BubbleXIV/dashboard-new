@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'discord-bg': '#1e1f22',
+                        'discord-secondary': '#2b2d31',
+                        'discord-tertiary': '#313338',
+                        'discord-blurple': '#5865F2',
+                        'discord-dark-blurple': '#4752C4',
+                        'discord-text': '#ffffff',
+                        'discord-text-secondary': '#b5bac1',
+                        'discord-text-muted': '#80848e',
+                        'discord-success': '#23a559',
+                        'discord-danger': '#f23f42',
+                        'discord-warning': '#f0b232'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-discord-bg text-discord-text font-inter">
+    <!-- Discord OAuth Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-discord-blurple to-discord-dark-blurple">
+        <div class="bg-discord-secondary p-8 rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-discord-blurple rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fab fa-discord text-2xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-bold mb-2">Bot Dashboard</h1>
+                <p class="text-discord-text-secondary">Manage your Discord bot settings</p>
+            </div>
+            
+            <button onclick="loginWithDiscord()" class="w-full bg-discord-blurple hover:bg-discord-dark-blurple transition-colors duration-200 py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-3">
+                <i class="fab fa-discord"></i>
+                Login with Discord
+            </button>
+            
+            <div class="mt-6 text-center text-sm text-discord-text-muted">
+                <p>By logging in, you agree to our Terms of Service</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Selection Screen -->
+    <div id="serverSelection" class="min-h-screen flex items-center justify-center bg-discord-bg hidden">
+        <div class="bg-discord-secondary p-8 rounded-xl shadow-2xl max-w-2xl w-full mx-4">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold mb-2">Select a Server</h1>
+                <p class="text-discord-text-secondary">Choose a server where you have administrator permissions</p>
+            </div>
+            
+            <div class="grid gap-4 max-h-96 overflow-y-auto">
+                <!-- @MAP: guilds.map(guild => ( -->
+                <div class="bg-discord-tertiary hover:bg-discord-blurple/20 p-4 rounded-lg cursor-pointer transition-colors duration-200 flex items-center gap-4" onclick="selectServer('123456789')">
+                    <!-- Server icon placeholder -->
+                    <div class="w-12 h-12 bg-discord-blurple rounded-full flex items-center justify-center text-lg font-bold">
+                        S
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-medium">Sample Server</h3>
+                        <p class="text-sm text-discord-text-secondary">Administrator • 1,234 members</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-discord-text-muted"></i>
+                </div>
+                <!-- @END_MAP )) -->
+                
+                <div class="bg-discord-tertiary hover:bg-discord-blurple/20 p-4 rounded-lg cursor-pointer transition-colors duration-200 flex items-center gap-4" onclick="selectServer('987654321')">
+                    <div class="w-12 h-12 bg-discord-success rounded-full flex items-center justify-center text-lg font-bold">
+                        G
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-medium">Gaming Community</h3>
+                        <p class="text-sm text-discord-text-secondary">Owner • 567 members</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-discord-text-muted"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="min-h-screen bg-discord-bg hidden">
+        <!-- Header -->
+        <header class="bg-discord-secondary border-b border-discord-tertiary px-6 py-4 sticky top-0 z-50">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-discord-text-secondary hover:text-discord-text">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-discord-blurple rounded-full flex items-center justify-center">
+                            <i class="fab fa-discord text-sm"></i>
+                        </div>
+                        <h1 class="text-xl font-bold">Bot Dashboard</h1>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Server Selector -->
+                    <div class="relative" data-bind="selectedGuild">
+                        <button class="flex items-center gap-2 bg-discord-tertiary px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors">
+                            <div class="w-6 h-6 bg-discord-blurple rounded-full flex items-center justify-center text-xs font-bold">S</div>
+                            <span class="hidden sm:block">Sample Server</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- User Profile -->
+                    <div class="flex items-center gap-3">
+                        <!-- Bot Status -->
+                        <div class="flex items-center gap-2 text-sm">
+                            <div class="w-2 h-2 bg-discord-success rounded-full animate-pulse"></div>
+                            <span class="hidden sm:block text-discord-text-secondary">Online</span>
+                        </div>
+                        
+                        <!-- User Avatar -->
+                        <div class="w-8 h-8 bg-discord-blurple rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="w-64 bg-discord-secondary border-r border-discord-tertiary min-h-screen fixed lg:static z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+                <nav class="p-4 space-y-2">
+                    <a href="#" onclick="showSection('overview')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors text-discord-text-secondary hover:text-discord-text">
+                        <i class="fas fa-home w-5"></i>
+                        <span>Overview</span>
+                    </a>
+                    
+                    <div class="pt-4">
+                        <h3 class="text-xs font-semibold text-discord-text-muted uppercase tracking-wider mb-2 px-3">Bot Features</h3>
+                        
+                        <a href="#" onclick="showSection('roles')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors text-discord-text-secondary hover:text-discord-text">
+                            <i class="fas fa-shield-alt w-5"></i>
+                            <span>Roles & Autoroles</span>
+                        </a>
+                        
+                        <a href="#" onclick="showSection('attendance')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors text-discord-text-secondary hover:text-discord-text">
+                            <i class="fas fa-calendar-check w-5"></i>
+                            <span>Attendance</span>
+                        </a>
+                        
+                        <a href="#" onclick="showSection('formcall')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors text-discord-text-secondary hover:text-discord-text">
+                            <i class="fas fa-clipboard-list w-5"></i>
+                            <span>Forms</span>
+                        </a>
+                        
+                        <a href="#" onclick="showSection('giveaway')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors text-discord-text-secondary hover:text-discord-text">
+                            <i class="fas fa-gift w-5"></i>
+                            <span>Giveaways</span>
+                        </a>
+                        
+                        <a href="#" onclick="showSection('channels')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors text-discord-text-secondary hover:text-discord-text">
+                            <i class="fas fa-hashtag w-5"></i>
+                            <span>Channel Management</span>
+                        </a>
+                        
+                        <a href="#" onclick="showSection('twitch')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors text-discord-text-secondary hover:text-discord-text">
+                            <i class="fab fa-twitch w-5"></i>
+                            <span>Twitch Notifications</span>
+                        </a>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <h3 class="text-xs font-semibold text-discord-text-muted uppercase tracking-wider mb-2 px-3">Settings</h3>
+                        
+                        <a href="#" onclick="showSection('settings')" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-discord-blurple/20 transition-colors text-discord-text-secondary hover:text-discord-text">
+                            <i class="fas fa-cog w-5"></i>
+                            <span>Bot Settings</span>
+                        </a>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6 lg:ml-0">
+                <!-- Overview Section -->
+                <div id="overview-section" class="section-content">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Dashboard Overview</h2>
+                        <p class="text-discord-text-secondary">Monitor your bot's activity and manage server features</p>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-discord-blurple/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-users text-discord-blurple text-xl"></i>
+                                </div>
+                                <span class="text-discord-success text-sm font-medium">+12%</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1" data-bind="memberCount">1,234</h3>
+                            <p class="text-discord-text-secondary text-sm">Total Members</p>
+                        </div>
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-discord-success/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-calendar-check text-discord-success text-xl"></i>
+                                </div>
+                                <span class="text-discord-success text-sm font-medium">+5</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1" data-bind="activeEvents">23</h3>
+                            <p class="text-discord-text-secondary text-sm">Active Events</p>
+                        </div>
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-discord-warning/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-shield-alt text-discord-warning text-xl"></i>
+                                </div>
+                                <span class="text-discord-text-muted text-sm font-medium">--</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1" data-bind="autoRoles">8</h3>
+                            <p class="text-discord-text-secondary text-sm">Auto Roles</p>
+                        </div>
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                                    <i class="fab fa-twitch text-purple-400 text-xl"></i>
+                                </div>
+                                <span class="text-discord-success text-sm font-medium">3 live</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-1" data-bind="twitchStreamers">15</h3>
+                            <p class="text-discord-text-secondary text-sm">Twitch Streamers</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Recent Events</h3>
+                            <div class="space-y-4">
+                                <!-- @MAP: recentEvents.map(event => ( -->
+                                <div class="flex items-center gap-3 p-3 bg-discord-tertiary rounded-lg">
+                                    <div class="w-10 h-10 bg-discord-blurple rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-calendar text-sm"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-medium">Weekly Raid Night</h4>
+                                        <p class="text-sm text-discord-text-secondary">Tonight at 8:00 PM • 12 attending</p>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                                
+                                <div class="flex items-center gap-3 p-3 bg-discord-tertiary rounded-lg">
+                                    <div class="w-10 h-10 bg-discord-success rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-trophy text-sm"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-medium">Monthly Giveaway</h4>
+                                        <p class="text-sm text-discord-text-secondary">Ends in 2 days • 89 entries</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Bot Activity</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-discord-text-secondary">Commands Used Today</span>
+                                    <span class="font-medium">147</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-discord-text-secondary">Auto Roles Assigned</span>
+                                    <span class="font-medium">23</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-discord-text-secondary">Forms Submitted</span>
+                                    <span class="font-medium">8</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-discord-text-secondary">Events Created</span>
+                                    <span class="font-medium">3</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roles Section -->
+                <div id="roles-section" class="section-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Roles & Autoroles</h2>
+                        <p class="text-discord-text-secondary">Manage server roles and automatic role assignment</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Role Management -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">Server Roles</h3>
+                                <button class="bg-discord-blurple hover:bg-discord-dark-blurple px-3 py-1 rounded-lg text-sm transition-colors" onclick="openCreateRoleModal()">
+                                    <i class="fas fa-plus mr-2"></i>Create Role
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-3 max-h-80 overflow-y-auto">
+                                <!-- @MAP: roles.map(role => ( -->
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-4 h-4 rounded-full" style="background-color: #5865F2;"></div>
+                                        <span class="font-medium">Moderator</span>
+                                        <span class="text-xs bg-discord-bg px-2 py-1 rounded text-discord-text-secondary">123 members</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button class="text-discord-text-secondary hover:text-discord-text">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-discord-danger hover:text-red-400">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                                
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-4 h-4 rounded-full bg-discord-success"></div>
+                                        <span class="font-medium">Verified</span>
+                                        <span class="text-xs bg-discord-bg px-2 py-1 rounded text-discord-text-secondary">456 members</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button class="text-discord-text-secondary hover:text-discord-text">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-discord-danger hover:text-red-400">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Autoroles -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">Auto Roles</h3>
+                                <button class="bg-discord-success hover:bg-green-600 px-3 py-1 rounded-lg text-sm transition-colors" onclick="openAutoRoleModal()">
+                                    <i class="fas fa-plus mr-2"></i>Add Auto Role
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="p-4 bg-discord-tertiary rounded-lg">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="font-medium">New Member Role</h4>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                        </label>
+                                    </div>
+                                    <p class="text-sm text-discord-text-secondary">Automatically assign @Newcomer role to new members</p>
+                                </div>
+                                
+                                <div class="p-4 bg-discord-tertiary rounded-lg">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="font-medium">Reaction Role</h4>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                        </label>
+                                    </div>
+                                    <p class="text-sm text-discord-text-secondary">React with 🎮 to get @Gamer role</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Section -->
+                <div id="attendance-section" class="section-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Attendance Management</h2>
+                        <p class="text-discord-text-secondary">Create and manage events with attendance tracking</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <button class="bg-discord-blurple hover:bg-discord-dark-blurple px-4 py-2 rounded-lg transition-colors" onclick="openCreateEventModal()">
+                            <i class="fas fa-plus mr-2"></i>Create Event
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <!-- @MAP: events.map(event => ( -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-1">Weekly Raid Night</h3>
+                                    <p class="text-discord-text-secondary text-sm">Tonight at 8:00 PM EST</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs bg-discord-success px-2 py-1 rounded text-white">Recurring</span>
+                                    <button class="text-discord-text-secondary hover:text-discord-text">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3 mb-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Tank (2/2)</span>
+                                    <div class="w-24 bg-discord-tertiary rounded-full h-2">
+                                        <div class="bg-discord-success h-2 rounded-full" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Healer (1/2)</span>
+                                    <div class="w-24 bg-discord-tertiary rounded-full h-2">
+                                        <div class="bg-discord-warning h-2 rounded-full" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">DPS (6/8)</span>
+                                    <div class="w-24 bg-discord-tertiary rounded-full h-2">
+                                        <div class="bg-discord-blurple h-2 rounded-full" style="width: 75%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">9 attendees</span>
+                                <button class="text-discord-blurple hover:text-blue-400 text-sm">View Details</button>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-1">Tournament Finals</h3>
+                                    <p class="text-discord-text-secondary text-sm">Saturday at 3:00 PM EST</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs bg-discord-blurple px-2 py-1 rounded text-white">One-time</span>
+                                    <button class="text-discord-text-secondary hover:text-discord-text">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3 mb-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Participants (8/8)</span>
+                                    <div class="w-24 bg-discord-tertiary rounded-full h-2">
+                                        <div class="bg-discord-success h-2 rounded-full" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Spectators (15/∞)</span>
+                                    <div class="w-24 bg-discord-tertiary rounded-full h-2">
+                                        <div class="bg-discord-blurple h-2 rounded-full" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">23 attendees</span>
+                                <button class="text-discord-blurple hover:text-blue-400 text-sm">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forms Section -->
+                <div id="formcall-section" class="section-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Form Management</h2>
+                        <p class="text-discord-text-secondary">Create custom forms and view responses</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <button class="bg-discord-blurple hover:bg-discord-dark-blurple px-4 py-2 rounded-lg transition-colors" onclick="openCreateFormModal()">
+                            <i class="fas fa-plus mr-2"></i>Create Form
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <!-- @MAP: forms.map(form => ( -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-1">Application Form</h3>
+                                    <p class="text-discord-text-secondary text-sm">Guild recruitment application</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button class="text-discord-text-secondary hover:text-discord-text">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-discord-danger hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-discord-text-secondary">Questions</span>
+                                    <span class="font-medium">5</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-discord-text-secondary">Responses</span>
+                                    <span class="font-medium">23</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-discord-text-secondary">Status</span>
+                                    <span class="text-discord-success font-medium">Active</span>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full bg-discord-tertiary hover:bg-discord-blurple/20 py-2 rounded-lg text-sm transition-colors">
+                                View Responses
+                            </button>
+                        </div>
+                        <!-- @END_MAP )) -->
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-1">Event Feedback</h3>
+                                    <p class="text-discord-text-secondary text-sm">Post-event feedback form</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button class="text-discord-text-secondary hover:text-discord-text">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-discord-danger hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-discord-text-secondary">Questions</span>
+                                    <span class="font-medium">3</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-discord-text-secondary">Responses</span>
+                                    <span class="font-medium">47</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="text-discord-text-secondary">Status</span>
+                                    <span class="text-discord-warning font-medium">Paused</span>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full bg-discord-tertiary hover:bg-discord-blurple/20 py-2 rounded-lg text-sm transition-colors">
+                                View Responses
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Giveaway Section -->
+                <div id="giveaway-section" class="section-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Giveaway Management</h2>
+                        <p class="text-discord-text-secondary">Create and manage server giveaways</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <button class="bg-discord-blurple hover:bg-discord-dark-blurple px-4 py-2 rounded-lg transition-colors" onclick="openCreateGiveawayModal()">
+                            <i class="fas fa-gift mr-2"></i>Create Giveaway
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- @MAP: giveaways.map(giveaway => ( -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-1">Monthly Nitro Giveaway</h3>
+                                    <p class="text-discord-text-secondary text-sm">Win 1 month of Discord Nitro</p>
+                                </div>
+                                <span class="text-xs bg-discord-success px-2 py-1 rounded text-white">Active</span>
+                            </div>
+                            
+                            <div class="space-y-3 mb-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Entries</span>
+                                    <span class="font-medium">89</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Winners</span>
+                                    <span class="font-medium">1</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Ends</span>
+                                    <span class="font-medium">2 days</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button class="flex-1 bg-discord-tertiary hover:bg-discord-blurple/20 py-2 rounded-lg text-sm transition-colors">
+                                    View Entries
+                                </button>
+                                <button class="bg-discord-danger hover:bg-red-600 px-3 py-2 rounded-lg text-sm transition-colors">
+                                    End Now
+                                </button>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold mb-1">Game Key Giveaway</h3>
+                                    <p class="text-discord-text-secondary text-sm">Latest AAA game steam key</p>
+                                </div>
+                                <span class="text-xs bg-discord-text-muted px-2 py-1 rounded text-white">Ended</span>
+                            </div>
+                            
+                            <div class="space-y-3 mb-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Entries</span>
+                                    <span class="font-medium">156</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Winners</span>
+                                    <span class="font-medium">3</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-discord-text-secondary">Ended</span>
+                                    <span class="font-medium">5 days ago</span>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full bg-discord-tertiary hover:bg-discord-blurple/20 py-2 rounded-lg text-sm transition-colors">
+                                View Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Channels Section -->
+                <div id="channels-section" class="section-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Channel Management</h2>
+                        <p class="text-discord-text-secondary">Configure specialized channel features</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Media Channels -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Media Channels</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div>
+                                        <h4 class="font-medium">#memes</h4>
+                                        <p class="text-sm text-discord-text-secondary">Images and GIFs only</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div>
+                                        <h4 class="font-medium">#screenshots</h4>
+                                        <p class="text-sm text-discord-text-secondary">Game screenshots</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full mt-4 bg-discord-blurple hover:bg-discord-dark-blurple py-2 rounded-lg text-sm transition-colors">
+                                Configure Media Channels
+                            </button>
+                        </div>
+                        
+                        <!-- Temporary Channels -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Temporary Channels</h3>
+                            <div class="space-y-3 mb-4">
+                                <div class="p-3 bg-discord-tertiary rounded-lg">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="font-medium">Create Voice Channel</h4>
+                                        <span class="text-xs bg-discord-success px-2 py-1 rounded text-white">Active</span>
+                                    </div>
+                                    <p class="text-sm text-discord-text-secondary">Click to create temporary voice channels</p>
+                                </div>
+                                
+                                <div class="space-y-2">
+                                    <h5 class="text-sm font-medium text-discord-text-secondary">Active Temporary Channels</h5>
+                                    <div class="text-sm text-discord-text-muted">User's Room • 3 members</div>
+                                    <div class="text-sm text-discord-text-muted">Study Group • 2 members</div>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full bg-discord-success hover:bg-green-600 py-2 rounded-lg text-sm transition-colors">
+                                Configure Temp Channels
+                            </button>
+                        </div>
+                        
+                        <!-- Timezone Channels -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Timezone Channels</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div>
+                                        <h4 class="font-medium">🕒 3:45 PM Eastern</h4>
+                                        <p class="text-sm text-discord-text-secondary">EST timezone display</p>
+                                    </div>
+                                    <button class="text-discord-text-secondary hover:text-discord-text">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div>
+                                        <h4 class="font-medium">🕒 12:45 PM Pacific</h4>
+                                        <p class="text-sm text-discord-text-secondary">PST timezone display</p>
+                                    </div>
+                                    <button class="text-discord-text-secondary hover:text-discord-text">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full mt-4 bg-discord-warning hover:bg-yellow-600 py-2 rounded-lg text-sm transition-colors">
+                                Add Timezone Channel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Twitch Section -->
+                <div id="twitch-section" class="section-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Twitch Notifications</h2>
+                        <p class="text-discord-text-secondary">Monitor streamers and send live notifications</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-3 h-3 bg-discord-success rounded-full animate-pulse"></div>
+                                <h3 class="text-lg font-semibold">3 Live</h3>
+                            </div>
+                            <p class="text-discord-text-secondary">Currently streaming</p>
+                        </div>
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-2">15 Total</h3>
+                            <p class="text-discord-text-secondary">Monitored streamers</p>
+                        </div>
+                        
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-2">#live-streams</h3>
+                            <p class="text-discord-text-secondary">Notification channel</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Add Streamer -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Add Streamer</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Twitch Username</label>
+                                    <input type="text" placeholder="Enter Twitch username" class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white placeholder-discord-text-muted focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Notification Channel</label>
+                                    <select class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                                        <option value=""># Select channel</option>
+                                        <option value="123"># live-streams</option>
+                                        <option value="456"># announcements</option>
+                                    </select>
+                                </div>
+                                
+                                <button class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded-lg transition-colors">
+                                    <i class="fab fa-twitch mr-2"></i>Add Streamer
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Streamers List -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Monitored Streamers</h3>
+                            <div class="space-y-3 max-h-80 overflow-y-auto">
+                                <!-- @MAP: streamers.map(streamer => ( -->
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-3 h-3 bg-discord-success rounded-full animate-pulse"></div>
+                                        <div>
+                                            <h4 class="font-medium">streamer_name</h4>
+                                            <p class="text-sm text-discord-text-secondary">Playing Valorant • 1.2k viewers</p>
+                                        </div>
+                                    </div>
+                                    <button class="text-discord-danger hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <!-- @END_MAP )) -->
+                                
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-3 h-3 bg-discord-text-muted rounded-full"></div>
+                                        <div>
+                                            <h4 class="font-medium">another_streamer</h4>
+                                            <p class="text-sm text-discord-text-secondary">Offline</p>
+                                        </div>
+                                    </div>
+                                    <button class="text-discord-danger hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-3 bg-discord-tertiary rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-3 h-3 bg-discord-success rounded-full animate-pulse"></div>
+                                        <div>
+                                            <h4 class="font-medium">pro_gamer_tv</h4>
+                                            <p class="text-sm text-discord-text-secondary">Playing League of Legends • 850 viewers</p>
+                                        </div>
+                                    </div>
+                                    <button class="text-discord-danger hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div id="settings-section" class="section-content hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Bot Settings</h2>
+                        <p class="text-discord-text-secondary">Configure general bot behavior and preferences</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- General Settings -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">General Settings</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium">Bot Prefix</h4>
+                                        <p class="text-sm text-discord-text-secondary">Command prefix for the bot</p>
+                                    </div>
+                                    <input type="text" value="!" class="bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 w-16 text-center text-white focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium">Auto Delete Commands</h4>
+                                        <p class="text-sm text-discord-text-secondary">Delete command messages after execution</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                    </label>
+                                </div>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium">DM Responses</h4>
+                                        <p class="text-sm text-discord-text-secondary">Send command responses via DM</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Logging Settings -->
+                        <div class="bg-discord-secondary p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold mb-4">Logging Settings</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Log Channel</label>
+                                    <select class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                                        <option value=""># Select channel</option>
+                                        <option value="123"># mod-logs</option>
+                                        <option value="456"># admin-logs</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">Member Join/Leave</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">Message Edits/Deletes</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">Role Changes</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <button class="bg-discord-success hover:bg-green-600 px-6 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save Settings
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Create Role Modal -->
+    <div id="createRoleModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-discord-secondary rounded-xl p-6 w-full max-w-md mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Create New Role</h3>
+                <button onclick="closeModal('createRoleModal')" class="text-discord-text-secondary hover:text-discord-text">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Role Name</label>
+                    <input type="text" placeholder="Enter role name" class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white placeholder-discord-text-muted focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Role Color</label>
+                    <input type="color" value="#5865F2" class="w-full h-10 bg-discord-tertiary border border-discord-bg rounded-lg focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-sm">Mentionable</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                    </label>
+                </div>
+                
+                <div class="flex gap-3 pt-4">
+                    <button onclick="closeModal('createRoleModal')" class="flex-1 bg-discord-tertiary hover:bg-discord-bg py-2 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button class="flex-1 bg-discord-blurple hover:bg-discord-dark-blurple py-2 rounded-lg transition-colors">
+                        Create Role
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Event Modal -->
+    <div id="createEventModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-discord-secondary rounded-xl p-6 w-full max-w-lg mx-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Create New Event</h3>
+                <button onclick="closeModal('createEventModal')" class="text-discord-text-secondary hover:text-discord-text">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Event Title</label>
+                    <input type="text" placeholder="Enter event title" class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white placeholder-discord-text-muted focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Description</label>
+                    <textarea placeholder="Event description" rows="3" class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white placeholder-discord-text-muted focus:outline-none focus:ring-2 focus:ring-discord-blurple resize-none"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Date</label>
+                        <input type="date" class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Time</label>
+                        <input type="time" class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Channel</label>
+                    <select class="w-full bg-discord-tertiary border border-discord-bg rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-discord-blurple">
+                        <option value=""># Select channel</option>
+                        <option value="123"># events</option>
+                        <option value="456"># announcements</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-sm">Recurring Event</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-discord-blurple/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-discord-blurple"></div>
+                    </label>
+                </div>
+                
+                <div class="flex gap-3 pt-4">
+                    <button onclick="closeModal('createEventModal')" class="flex-1 bg-discord-tertiary hover:bg-discord-bg py-2 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button class="flex-1 bg-discord-blurple hover:bg-discord-dark-blurple py-2 rounded-lg transition-colors">
+                        Create Event
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-30 lg:hidden hidden" onclick="toggleSidebar()"></div>
+
+    <script>
+        // TODO: Implement Discord OAuth2 integration
+        // TODO: Implement real-time data synchronization with bot
+        // TODO: Implement database read/write operations
+        // TODO: Add form validation and error handling
+        // TODO: Implement WebSocket connection for live updates
+
+        (function() {
+            let currentSection = 'overview';
+            
+            function loginWithDiscord() {
+                // TODO: Implement Discord OAuth2 flow
+                console.log('Initiating Discord OAuth2...');
+                
+                // Simulate login success for demo
+                setTimeout(() => {
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('serverSelection').classList.remove('hidden');
+                }, 1000);
+            }
+            
+            function selectServer(guildId) {
+                // TODO: Validate user permissions for selected guild
+                console.log('Selected guild:', guildId);
+                
+                // Simulate server selection for demo
+                document.getElementById('serverSelection').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                
+                // TODO: Load guild-specific data
+                loadGuildData(guildId);
+            }
+            
+            function loadGuildData(guildId) {
+                // TODO: Fetch guild data from backend
+                console.log('Loading data for guild:', guildId);
+                
+                // TODO: Update dashboard with real data
+                updateDashboardStats({
+                    memberCount: 1234,
+                    activeEvents: 23,
+                    autoRoles: 8,
+                    twitchStreamers: 15
+                });
+            }
+            
+            function updateDashboardStats(stats) {
+                // TODO: Update DOM elements with real data
+                const elements = {
+                    memberCount: document.querySelector('[data-bind="memberCount"]'),
+                    activeEvents: document.querySelector('[data-bind="activeEvents"]'),
+                    autoRoles: document.querySelector('[data-bind="autoRoles"]'),
+                    twitchStreamers: document.querySelector('[data-bind="twitchStreamers"]')
+                };
+                
+                Object.keys(stats).forEach(key => {
+                    if (elements[key]) {
+                        elements[key].textContent = stats[key];
+                    }
+                });
+            }
+            
+            function showSection(sectionName) {
+                // Hide all sections
+                const sections = document.querySelectorAll('.section-content');
+                sections.forEach(section => section.classList.add('hidden'));
+                
+                // Show selected section
+                const targetSection = document.getElementById(`${sectionName}-section`);
+                if (targetSection) {
+                    targetSection.classList.remove('hidden');
+                    currentSection = sectionName;
+                }
+                
+                // Update nav active state
+                updateNavActiveState(sectionName);
+                
+                // Close mobile sidebar
+                if (window.innerWidth < 1024) {
+                    toggleSidebar();
+                }
+            }
+            
+            function updateNavActiveState(activeSectionName) {
+                // Remove active classes from all nav items
+                const navItems = document.querySelectorAll('aside nav a');
+                navItems.forEach(item => {
+                    item.classList.remove('bg-discord-blurple/20', 'text-discord-text');
+                    item.classList.add('text-discord-text-secondary');
+                });
+                
+                // Add active class to current nav item
+                const activeItem = document.querySelector(`aside nav a[onclick="showSection('${activeSectionName}')"]`);
+                if (activeItem) {
+                    activeItem.classList.add('bg-discord-blurple/20', 'text-discord-text');
+                    activeItem.classList.remove('text-discord-text-secondary');
+                }
+            }
+            
+            function toggleSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                
+                if (sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.remove('-translate-x-full');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                }
+            }
+            
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.remove('hidden');
+                }
+            }
+            
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+            }
+            
+            function openCreateRoleModal() {
+                openModal('createRoleModal');
+            }
+            
+            function openAutoRoleModal() {
+                // TODO: Implement auto role configuration modal
+                console.log('Opening auto role modal...');
+            }
+            
+            function openCreateEventModal() {
+                openModal('createEventModal');
+            }
+            
+            function openCreateFormModal() {
+                // TODO: Implement form creation modal
+                console.log('Opening create form modal...');
+            }
+            
+            function openCreateGiveawayModal() {
+                // TODO: Implement giveaway creation modal
+                console.log('Opening create giveaway modal...');
+            }
+            
+            // Initialize dashboard
+            function initializeDashboard() {
+                // Set initial nav state
+                updateNavActiveState('overview');
+                
+                // TODO: Start WebSocket connection for real-time updates
+                // TODO: Set up periodic data refresh
+                
+                console.log('Dashboard initialized');
+            }
+            
+            // Make functions globally available
+            window.loginWithDiscord = loginWithDiscord;
+            window.selectServer = selectServer;
+            window.showSection = showSection;
+            window.toggleSidebar = toggleSidebar;
+            window.openCreateRoleModal = openCreateRoleModal;
+            window.openAutoRoleModal = openAutoRoleModal;
+            window.openCreateEventModal = openCreateEventModal;
+            window.openCreateFormModal = openCreateFormModal;
+            window.openCreateGiveawayModal = openCreateGiveawayModal;
+            window.closeModal = closeModal;
+            
+            // Initialize when DOM is loaded
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeDashboard);
+            } else {
+                initializeDashboard();
+            }
+        })();
+    </script>
+</body>
+</html>
